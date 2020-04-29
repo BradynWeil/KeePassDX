@@ -760,7 +760,9 @@ open class PasswordActivity : StylishActivity() {
         private const val KEY_PERMISSION_ASKED = "KEY_PERMISSION_ASKED"
         private const val WRITE_EXTERNAL_STORAGE_REQUEST = 647
 
-        private fun buildAndLaunchIntent(activity: Activity, databaseFile: Uri, keyFile: Uri?,
+        private fun buildAndLaunchIntent(activity: Activity,
+                                         databaseFile: Uri,
+                                         keyFile: Uri?,
                                          intentBuildLauncher: (Intent) -> Unit) {
             val intent = Intent(activity, PasswordActivity::class.java)
             intent.putExtra(KEY_FILENAME, databaseFile)
@@ -776,10 +778,9 @@ open class PasswordActivity : StylishActivity() {
          */
 
         @Throws(FileNotFoundException::class)
-        fun launch(
-                activity: Activity,
-                databaseFile: Uri,
-                keyFile: Uri?) {
+        fun launch(activity: Activity,
+                    databaseFile: Uri,
+                    keyFile: Uri?) {
             buildAndLaunchIntent(activity, databaseFile, keyFile) { intent ->
                 activity.startActivity(intent)
             }
@@ -792,10 +793,9 @@ open class PasswordActivity : StylishActivity() {
          */
 
         @Throws(FileNotFoundException::class)
-        fun launchForKeyboardResult(
-                activity: Activity,
-                databaseFile: Uri,
-                keyFile: Uri?) {
+        fun launchForKeyboardResult(activity: Activity,
+                                    databaseFile: Uri,
+                                    keyFile: Uri?) {
             buildAndLaunchIntent(activity, databaseFile, keyFile) { intent ->
                 EntrySelectionHelper.startActivityForEntrySelection(activity, intent)
             }
@@ -809,12 +809,11 @@ open class PasswordActivity : StylishActivity() {
 
         @RequiresApi(api = Build.VERSION_CODES.O)
         @Throws(FileNotFoundException::class)
-        fun launchForAutofillResult(
-                activity: Activity,
-                databaseFile: Uri,
-                keyFile: Uri?,
-                assistStructure: AssistStructure?,
-                searchInfo: SearchInfo?) {
+        fun launchForAutofillResult(activity: Activity,
+                                    databaseFile: Uri,
+                                    keyFile: Uri?,
+                                    assistStructure: AssistStructure?,
+                                    searchInfo: SearchInfo?) {
             if (assistStructure != null) {
                 buildAndLaunchIntent(activity, databaseFile, keyFile) { intent ->
                     AutofillHelper.startActivityForAutofillResult(

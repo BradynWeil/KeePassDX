@@ -31,9 +31,11 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.widget.Toolbar
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
@@ -43,8 +45,8 @@ import com.kunzisoft.keepass.activities.dialogs.AssignMasterKeyDialogFragment
 import com.kunzisoft.keepass.activities.helpers.EntrySelectionHelper
 import com.kunzisoft.keepass.activities.helpers.OpenFileHelper
 import com.kunzisoft.keepass.activities.stylish.StylishActivity
+import com.kunzisoft.keepass.adapters.DatabaseFilesViewModel
 import com.kunzisoft.keepass.adapters.FileDatabaseHistoryAdapter
-import com.kunzisoft.keepass.app.database.FileDatabaseHistoryAction
 import com.kunzisoft.keepass.autofill.AutofillHelper
 import com.kunzisoft.keepass.autofill.AutofillHelper.KEY_SEARCH_INFO
 import com.kunzisoft.keepass.database.action.ProgressDialogThread
@@ -67,10 +69,10 @@ class FileDatabaseSelectActivity : StylishActivity(),
     private var createButtonView: View? = null
     private var openDatabaseButtonView: View? = null
 
+    private val databaseFilesViewModel: DatabaseFilesViewModel by viewModels()
+
     // Adapter to manage database history list
     private var mAdapterDatabaseHistory: FileDatabaseHistoryAdapter? = null
-
-    private var mFileDatabaseHistoryAction: FileDatabaseHistoryAction? = null
 
     private var mDatabaseFileUri: Uri? = null
 
@@ -80,8 +82,6 @@ class FileDatabaseSelectActivity : StylishActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        mFileDatabaseHistoryAction = FileDatabaseHistoryAction.getInstance(applicationContext)
 
         setContentView(R.layout.activity_file_selection)
         coordinatorLayout = findViewById(R.id.activity_file_selection_coordinator_layout)
@@ -125,13 +125,14 @@ class FileDatabaseSelectActivity : StylishActivity(),
         // Construct adapter with listeners
         mAdapterDatabaseHistory = FileDatabaseHistoryAdapter(this)
         mAdapterDatabaseHistory?.setOnFileDatabaseHistoryOpenListener { fileDatabaseHistoryEntityToOpen ->
-            UriUtil.parse(fileDatabaseHistoryEntityToOpen.databaseUri)?.let { databaseFileUri ->
+            UriUtil.parse(fileDatabaseHistoryEntityToOpen.entity.databaseUri)?.let { databaseFileUri ->
                 launchPasswordActivity(
                         databaseFileUri,
-                        UriUtil.parse(fileDatabaseHistoryEntityToOpen.keyFileUri))
+                        UriUtil.parse(fileDatabaseHistoryEntityToOpen.entity.keyFileUri))
             }
         }
         mAdapterDatabaseHistory?.setOnFileDatabaseHistoryDeleteListener { fileDatabaseHistoryToDelete ->
+            /*
             // Remove from app database
             mFileDatabaseHistoryAction?.deleteFileDatabaseHistory(fileDatabaseHistoryToDelete) { fileHistoryDeleted ->
                 // Remove from adapter
@@ -140,10 +141,15 @@ class FileDatabaseSelectActivity : StylishActivity(),
                     mAdapterDatabaseHistory?.notifyDataSetChanged()
                 }
             }
+
+             */
             true
         }
         mAdapterDatabaseHistory?.setOnSaveAliasListener { fileDatabaseHistoryWithNewAlias ->
+            /*
             mFileDatabaseHistoryAction?.addOrUpdateFileDatabaseHistory(fileDatabaseHistoryWithNewAlias)
+            
+             */
         }
         fileDatabaseHistoryRecyclerView.adapter = mAdapterDatabaseHistory
 
@@ -268,21 +274,10 @@ class FileDatabaseSelectActivity : StylishActivity(),
 
         // Construct adapter with listeners
         if (PreferencesUtil.showRecentFiles(this)) {
-            mFileDatabaseHistoryAction?.getAllFileDatabaseHistories { databaseFileHistoryList ->
-                databaseFileHistoryList?.let { historyList ->
-                    val hideBrokenLocations = PreferencesUtil.hideBrokenLocations(this@FileDatabaseSelectActivity)
-                    mAdapterDatabaseHistory?.addDatabaseFileHistoryList(
-                            // Show only uri accessible
-                            historyList.filter {
-                                if (hideBrokenLocations) {
-                                    FileDatabaseInfo(this@FileDatabaseSelectActivity,
-                                            it.databaseUri).exists
-                                } else
-                                    true
-                            })
-                    mAdapterDatabaseHistory?.notifyDataSetChanged()
-                }
-            }
+            databaseFilesViewModel.databaseFiles.observe(this, Observer { databaseFiles ->
+                mAdapterDatabaseHistory?.addDatabaseFileHistoryList(databaseFiles)
+                mAdapterDatabaseHistory?.notifyDataSetChanged()
+            })
         } else {
             mAdapterDatabaseHistory?.clearDatabaseFileHistoryList()
             mAdapterDatabaseHistory?.notifyDataSetChanged()

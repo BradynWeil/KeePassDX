@@ -31,19 +31,18 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.ViewSwitcher
 import com.kunzisoft.keepass.R
-import com.kunzisoft.keepass.app.database.FileDatabaseHistoryEntity
-import com.kunzisoft.keepass.utils.FileDatabaseInfo
+import com.kunzisoft.keepass.model.DatabaseFile
 import com.kunzisoft.keepass.utils.UriUtil
 
 class FileDatabaseHistoryAdapter(private val context: Context)
     : RecyclerView.Adapter<FileDatabaseHistoryAdapter.FileDatabaseHistoryViewHolder>() {
 
     private val inflater: LayoutInflater = LayoutInflater.from(context)
-    private var fileItemOpenListener: ((FileDatabaseHistoryEntity)->Unit)? = null
-    private var fileSelectClearListener: ((FileDatabaseHistoryEntity)->Boolean)? = null
-    private var saveAliasListener: ((FileDatabaseHistoryEntity)->Unit)? = null
+    private var fileItemOpenListener: ((DatabaseFile)->Unit)? = null
+    private var fileSelectClearListener: ((DatabaseFile)->Boolean)? = null
+    private var saveAliasListener: ((DatabaseFile)->Unit)? = null
 
-    private val listDatabaseFiles = ArrayList<FileDatabaseHistoryEntity>()
+    private val listDatabaseFiles = ArrayList<DatabaseFile>()
 
     private var mExpandedPosition = -1
     private var mPreviousExpandedPosition = -1
@@ -69,29 +68,29 @@ class FileDatabaseHistoryAdapter(private val context: Context)
 
     override fun onBindViewHolder(holder: FileDatabaseHistoryViewHolder, position: Int) {
         // Get info from position
-        val fileHistoryEntity = listDatabaseFiles[position]
-        val fileDatabaseInfo = FileDatabaseInfo(context, fileHistoryEntity.databaseUri)
+        val databaseFile = listDatabaseFiles[position]
 
         // Click item to open file
         if (fileItemOpenListener != null)
             holder.fileContainer.setOnClickListener {
-                fileItemOpenListener?.invoke(fileHistoryEntity)
+                fileItemOpenListener?.invoke(databaseFile)
             }
 
         // File alias
-        holder.fileAlias.text = fileDatabaseInfo.retrieveDatabaseAlias(fileHistoryEntity.databaseAlias)
+        holder.fileAlias.text = databaseFile.fileDatabaseInfo
+                .retrieveDatabaseAlias(databaseFile.entity.databaseAlias)
 
         // File path
-        holder.filePath.text = UriUtil.decode(fileDatabaseInfo.fileUri?.toString())
+        holder.filePath.text = UriUtil.decode(databaseFile.fileDatabaseInfo.fileUri?.toString())
 
-        if (fileDatabaseInfo.exists) {
+        if (databaseFile.fileDatabaseInfo.exists) {
             holder.fileInformation.clearColorFilter()
         } else {
             holder.fileInformation.setColorFilter(Color.RED, PorterDuff.Mode.MULTIPLY)
         }
 
         // Modification
-        fileDatabaseInfo.getModificationString()?.let {
+        databaseFile.fileDatabaseInfo.getModificationString()?.let {
             holder.fileModification.text = it
             holder.fileModification.visibility = View.VISIBLE
         } ?: run {
@@ -99,7 +98,7 @@ class FileDatabaseHistoryAdapter(private val context: Context)
         }
 
         // Size
-        fileDatabaseInfo.getSizeString()?.let {
+        databaseFile.fileDatabaseInfo.getSizeString()?.let {
             holder.fileSize.text = it
             holder.fileSize.visibility = View.VISIBLE
         } ?: run {
@@ -114,8 +113,8 @@ class FileDatabaseHistoryAdapter(private val context: Context)
         // Save alias modification
         holder.fileAliasCloseButton.setOnClickListener {
             // Change the alias
-            fileHistoryEntity.databaseAlias = holder.fileAliasEdit.text.toString()
-            saveAliasListener?.invoke(fileHistoryEntity)
+            databaseFile.entity.databaseAlias = holder.fileAliasEdit.text.toString()
+            saveAliasListener?.invoke(databaseFile)
 
             // Finish save mode
             holder.fileMainSwitcher.showPrevious()
@@ -130,7 +129,7 @@ class FileDatabaseHistoryAdapter(private val context: Context)
         }
 
         holder.fileDeleteButton.setOnClickListener {
-            fileSelectClearListener?.invoke(fileHistoryEntity)
+            fileSelectClearListener?.invoke(databaseFile)
         }
 
         if (isExpanded) {
@@ -160,24 +159,24 @@ class FileDatabaseHistoryAdapter(private val context: Context)
         listDatabaseFiles.clear()
     }
 
-    fun addDatabaseFileHistoryList(listFileDatabaseHistoryToAdd: List<FileDatabaseHistoryEntity>) {
+    fun addDatabaseFileHistoryList(listFileDatabaseHistoryToAdd: List<DatabaseFile>) {
         listDatabaseFiles.clear()
         listDatabaseFiles.addAll(listFileDatabaseHistoryToAdd)
     }
 
-    fun deleteDatabaseFileHistory(fileDatabaseHistoryToDelete: FileDatabaseHistoryEntity) {
+    fun deleteDatabaseFileHistory(fileDatabaseHistoryToDelete: DatabaseFile) {
         listDatabaseFiles.remove(fileDatabaseHistoryToDelete)
     }
 
-    fun setOnFileDatabaseHistoryOpenListener(listener : ((FileDatabaseHistoryEntity)->Unit)?) {
+    fun setOnFileDatabaseHistoryOpenListener(listener : ((DatabaseFile)->Unit)?) {
         this.fileItemOpenListener = listener
     }
 
-    fun setOnFileDatabaseHistoryDeleteListener(listener : ((FileDatabaseHistoryEntity)->Boolean)?) {
+    fun setOnFileDatabaseHistoryDeleteListener(listener : ((DatabaseFile)->Boolean)?) {
         this.fileSelectClearListener = listener
     }
 
-    fun setOnSaveAliasListener(listener : ((FileDatabaseHistoryEntity)->Unit)?) {
+    fun setOnSaveAliasListener(listener : ((DatabaseFile)->Unit)?) {
         this.saveAliasListener = listener
     }
 
